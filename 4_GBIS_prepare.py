@@ -35,11 +35,11 @@ def process_data(input_file, output_file, mode='azi'):
             if mode == 'azi':
                 if track[-1] == 'A':
                     heading_rad = np.arcsin(col5 / np.sin(incidence_rad))
-                    heading_deg = np.degrees(heading_rad)
+                    heading_deg = np.degrees(heading_rad)-180   %should be opposite to suite the GBIS!
                     f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
                 elif track[-1] == 'D':
                     heading_rad = np.arcsin(-col5 / np.sin(incidence_rad))
-                    heading_deg = np.degrees(heading_rad) * -1
+                    heading_deg = (np.degrees(heading_rad) * -1)+180
                     f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
 
             elif mode == 'rng':
