@@ -14,47 +14,53 @@ def m2rad_s1(inm):
     return outrad
 
 ###################################
-
 def process_data(input_file, output_file, mode='azi'):
     with open(input_file, 'r') as f:
         lines = f.readlines()
-    track=os.path.basename(os.path.dirname(input_file))
+    track = os.path.basename(os.path.dirname(input_file))
     with open(output_file, 'w') as f_out:
         for line in lines:
             cols = line.strip().split()
-            col2 = float(cols[1])
-            col1 = float(cols[0])
-            col3 = float(cols[2])
-            col6 = float(cols[5])
-            col5 = float(cols[4])
-            
-            #changing the meter to phase regarding 0.055(C-band) :)
-            col3 = m2rad_s1(col3)
+            if len(cols) < 6:  # Skip lines with fewer than 6 columns
+                continue
+            try:
+                col2 = float(cols[1])
+                col1 = float(cols[0])
+                col3 = float(cols[2])
+                col6 = float(cols[5])
+                col5 = float(cols[4])
+                
+                # Change meters to phase for C-band
+                col3 = m2rad_s1(col3)
 
-            incidence_rad = np.arccos(col6)
-            if mode == 'azi':
-                if track[-1] == 'A':
-                    heading_rad = np.arcsin(col5 / np.sin(incidence_rad))
-                    heading_deg = np.degrees(heading_rad)-180   %should be opposite to suite the GBIS!
-                    f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
-                elif track[-1] == 'D':
-                    heading_rad = np.arcsin(-col5 / np.sin(incidence_rad))
-                    heading_deg = (np.degrees(heading_rad) * -1)+180
-                    f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
+                incidence_rad = np.arccos(col6)
+                if mode == 'azi':
+                    if track[-1] == 'A':
+                        heading_rad = np.arcsin(col5 / np.sin(incidence_rad))
+                        heading_deg = np.degrees(heading_rad) - 180  # Opposite for GBIS
+                        f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
+                    elif track[-1] == 'D':
+                        heading_rad = np.arcsin(-col5 / np.sin(incidence_rad))
+                        heading_deg = (np.degrees(heading_rad) * -1) + 180
+                        f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
 
-            elif mode == 'rng':
-                if track[-1] == 'A':
-                    heading_rad = np.arcsin(col5 / np.sin(incidence_rad))
-                    heading_deg = np.degrees(heading_rad)
-                    f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
-                elif track[-1] == 'D':
-                    heading_rad = np.arcsin(-col5 / np.sin(incidence_rad)) - np.pi
-                    heading_deg = np.degrees(heading_rad)
-                    f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
+                elif mode == 'rng':
+                    if track[-1] == 'A':
+                        heading_rad = np.arcsin(col5 / np.sin(incidence_rad))
+                        heading_deg = np.degrees(heading_rad)
+                        f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
+                    elif track[-1] == 'D':
+                        heading_rad = np.arcsin(-col5 / np.sin(incidence_rad)) - np.pi
+                        heading_deg = np.degrees(heading_rad)
+                        f_out.write(f"{col1:.6f} {col2:.6f} {col3:.6f} {np.degrees(incidence_rad):.6f} {heading_deg:.6f}\n")
+            except (ValueError, ZeroDivisionError) as e:
+                # Skip lines that cause errors in calculations
+                print(f"Skipping line due to error: {e}")
+                continue
+
 
 homedir = os.getcwd()
 specific_folders = ["014A", "021D", "116A", "123D"]
-
 # Processing .inp files for azimuth (azi) mode
 for folder in specific_folders:
     folder_path = os.path.join(homedir, folder)
